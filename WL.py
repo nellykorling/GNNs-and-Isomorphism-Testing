@@ -1,42 +1,18 @@
-# Weisfeiler-Lehman algorithm for graph isomorphism
-# use networkx for graph components
+
 import networkx as nx
 import hashlib
 import matplotlib.pyplot as plt
 import os
+from torch_geometric.datasets import TUDataset as tud
+from torch_geometric.utils import to_networkx
 
-# Create the original C6 cycle graph
-G1 = nx.cycle_graph(6)
+from example_graphs import G1, G2
 
-# Create a relabeled isomorphic graph with a permutation of node labels
-# Example permutation: 0->3, 1->4, 2->5, 3->0, 4->1, 5->2
-# mapping = {0: 3, 1: 4, 2: 5, 3: 0, 4: 1, 5: 2}
-# G2 = nx.relabel_nodes(G1, mapping)
+# Download/load MUTAG dataset
+dataset = tud(root='./data', name='MUTAG')
 
-G2 = nx.Graph()
-G2.add_edges_from([(0, 1), (1, 2), (2, 0)])  # First triangle
-G2.add_edges_from([(3, 4), (4, 5), (5, 3)])
-
-# Create folder
-output_folder = "plots"
-os.makedirs(output_folder, exist_ok=True)
-
-# Draw and save the graphs
-plt.figure(figsize=(8, 4))
-
-plt.subplot(121)
-nx.draw_shell(G1, with_labels=True)
-plt.title("Graph G1: Cycle C6")
-
-plt.subplot(122)
-nx.draw_shell(G2, with_labels=True)
-plt.title("Graph G2: Two triangles + matching")
-
-plt.tight_layout()
-plt.savefig(os.path.join(output_folder, "wl_indistinguishable_graphs.png"))
-plt.close()
-
-G3 = nx.path_graph(6)
+G1 = to_networkx(dataset[0])
+G2 = to_networkx(dataset[1])
 
 def stable_hash(label_tuple):
     '''
@@ -67,8 +43,7 @@ def update_node_label(G, node):
     # Include the node's own label in the hash
     label_tuple = (str(G.nodes[node]['label']),) + tuple(sorted(multiset))
     G.nodes[node]['label'] = stable_hash(label_tuple)
-
-
+ 
 def WL(G, iterations):
     '''
     repeat node label updates for a given number of iterations
@@ -79,19 +54,36 @@ def WL(G, iterations):
     for _ in range(iterations):
         for node in G.nodes():
             update_node_label(G, node)
-        # Collect labels after this iteration
-        all_labels.append(sorted([G.nodes[node]['label'] for node in G.nodes()]))
+        all_labels.extend([G.nodes[node]['label'] for node in G.nodes()])
     return all_labels
-
 
 def WL_test_isomorphic(G1, G2, iterations):
     '''
     test if two graphs are isomorphic by comparing the output of the WL algorithm
     for the graphs. If the multisets are equal, the graphs may be isomorphic.
     '''
-    multiset1 = WL(G1, iterations)
-    multiset2 = WL(G2, iterations)
+    from collections import Counter
+    multiset1 = Counter(WL(G1, iterations))
+    print(multiset1)
+    multiset2 = Counter(WL(G2, iterations))
+    print(multiset2)
     return multiset1 == multiset2
+
+
+
+print(WL_test_isomorphic(G1, G2, 4))
+
+def kernel_matrix(G1, G2):
+    return
+
+
+def SVM_classifier(kernel_matrix, C):
+    return
+
+
+
+
+
 
 
 
