@@ -91,7 +91,7 @@ class MPGNN(nn.Module):
             X = layer(X, neighbors)
         return X
 
-def graph_pooling(X, method='mean'):
+def graph_pooling(X, method):
     """
     pool node embeddings into graph embedding
 
